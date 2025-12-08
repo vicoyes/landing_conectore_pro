@@ -5,10 +5,6 @@
 *.swo
 *~
 
-# Drafts - páginas no publicadas
-_drafts/
-*~
-
 # OS files
 .DS_Store
 Thumbs.db
