@@ -175,6 +175,18 @@ function toggleFaq(button) {
 // ============================================
 // WEBHOOK FORM SUBMISSION (n8n)
 // ============================================
+
+/**
+ * Obtiene el parámetro 'tag' de la URL
+ * Si no existe, retorna 'NA'
+ * @returns {string} Valor del parámetro tag o 'NA'
+ */
+function getUrlTag() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tag = urlParams.get('tag');
+    return tag || 'NA';
+}
+
 function initWebhookForm() {
     const form = document.getElementById('contactForm');
     if (!form) return;
@@ -199,6 +211,7 @@ function initWebhookForm() {
             autonomo_empresa: document.getElementById('autonomo_empresa').value,
             privacidad: document.getElementById('privacidad').checked,
             newsletter: document.getElementById('newsletter').checked,
+            tag: getUrlTag(), // Obtiene el parámetro tag de la URL o 'NA' si no existe
             timestamp: new Date().toISOString(),
             page_url: window.location.href,
             page_title: document.title,
