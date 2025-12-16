@@ -1,0 +1,51 @@
+{
+  "hero": {
+    "badge": "Programa de Embajadores y Conectores",
+    "title_part1": "Gana",
+    "title_highlight": "googl",
+    "title_part2": "por recomendarnos mientras ayudas a personas a cancelar sus deudas legalmente.",
+    "subtitle_bold": "Sin ser abogado. Sin vender. Sin experiencia previa.",
+    "description": "Tú solo creas el contacto. Nuestro equipo jurídico se encarga de todo el proceso legal de la Ley de la Segunda Oportunidad. Cuando esa persona contrata el procedimiento, tú recibes 300€.",
+    "cta_text": "QUIERO SER CONECTOR Y GANAR 300€",
+    "microtext": "Registro gratuito. Empieza hoy mismo."
+  },
+  "dream": {
+    "pretitle": "En Empieza de Cero",
+    "title": "TENEMOS UN SUEÑO",
+    "subtitle_light": "Construir un verdadero ecosistema",
+    "subtitle_bold": "de segundas oportunidades",
+    "join_pretitle": "¿Quieres ser parte del cambio?",
+    "join_title": "ÚNETE AL SUEÑO",
+    "join_subtitle": "Juntos podemos llegar más lejos"
+  },
+  "steps": {
+    "pretitle": "4 PASOS SIMPLES",
+    "title": "Cómo funciona tu papel como Conector",
+    "list": [
+      {
+        "number": "01",
+        "title": "Identifica",
+        "description": "Encuentra personas con deudas +15.000 € y mínimo 2 acreedores.",
+        "icon": "search"
+      },
+      {
+        "number": "02",
+        "title": "Recoge datos y envía",
+        "description": "Recoge nombre, DNI, teléfono, email, dirección de empadronamiento, estado civil y deuda aproximada. Luego usa tu enlace privado o formulario de Conector para enviar el contacto.",
+        "icon": "edit_note"
+      },
+      {
+        "number": "03",
+        "title": "Nosotros actuamos",
+        "description": "Nosotros contactamos con tu referido y realizamos el análisis jurídico, documentación y tramitación legal completa.",
+        "icon": "gavel"
+      },
+      {
+        "number": "04",
+        "title": "Cobras 300 €",
+        "description": "Si paga 1.000 € obtienes 300 € de inmediato. Si paga fraccionado: 150 € al llegar a 500 € y otros 150 € al llegar a 1.000 €.",
+        "icon": "payments"
+      }
+    ]
+  }
+}

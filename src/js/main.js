@@ -175,18 +175,6 @@ function toggleFaq(button) {
 // ============================================
 // WEBHOOK FORM SUBMISSION (n8n)
 // ============================================
-
-/**
- * Obtiene el parámetro 'tag' de la URL
- * Si no existe, retorna 'NA'
- * @returns {string} Valor del parámetro tag o 'NA'
- */
-function getUrlTag() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const tag = urlParams.get('tag');
-    return tag || 'NA';
-}
-
 function initWebhookForm() {
     const form = document.getElementById('contactForm');
     if (!form) return;
@@ -201,17 +189,53 @@ function initWebhookForm() {
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<span class="material-icons animate-spin">sync</span> Enviando...';
 
+        // Obtener parámetro tag de la URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const tag = urlParams.get('tag') || 'NA';
+
+        // Generar ID único para este formulario
+        function generarIdUnico() {
+            // Usar crypto.randomUUID() si está disponible, sino generar uno manualmente
+            if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+                return crypto.randomUUID();
+            }
+            // Generar UUID v4 manualmente
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                const r = Math.random() * 16 | 0;
+                const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+        
+        const formIdUnico = generarIdUnico();
+
+        // Obtener código de país y teléfono
+        const codigoPais = document.getElementById('codigo_pais')?.value || '+34';
+        const telefonoRaw = document.getElementById('telefono').value;
+        
+        // Normalizar teléfono: mantener el + si existe, eliminar todo lo demás excepto números
+        let telefonoCompleto;
+        if (telefonoRaw.trim().startsWith('+')) {
+            // Si el teléfono ya tiene código de país con +, normalizar todo manteniendo el +
+            telefonoCompleto = '+' + telefonoRaw.replace(/[^\d]/g, '');
+        } else {
+            // Si no tiene +, usar el código de país del selector y normalizar el número
+            const telefonoNormalizado = telefonoRaw.replace(/\D/g, '');
+            telefonoCompleto = codigoPais + telefonoNormalizado;
+        }
+
         // Recoger datos del formulario
         const formData = {
             nombre: document.getElementById('nombre').value,
             email: document.getElementById('email').value,
-            telefono: Number(document.getElementById('telefono').value.replace(/\D/g, '')), // Elimina espacios/símbolos y convierte a número
+            telefono: telefonoCompleto, // Número completo con código de país (ej: +34612345678)
             provincia: document.getElementById('provincia').value,
             tiene_contacto: document.getElementById('tiene_contacto').value,
             autonomo_empresa: document.getElementById('autonomo_empresa').value,
             privacidad: document.getElementById('privacidad').checked,
             newsletter: document.getElementById('newsletter').checked,
-            tag: getUrlTag(), // Obtiene el parámetro tag de la URL o 'NA' si no existe
+            tag: tag,
+            form_id: formIdUnico, // ID único del formulario
             timestamp: new Date().toISOString(),
             page_url: window.location.href,
             page_title: document.title,
@@ -236,9 +260,9 @@ function initWebhookForm() {
 
             // Aceptar cualquier respuesta exitosa (200-299) o incluso sin respuesta
             if (response.ok || response.status === 0) {
-                // Éxito - Pasar al Paso 2 (Calendly)
-                if (typeof mostrarPaso2 === 'function') {
-                    mostrarPaso2();
+                // Éxito - Redirigir a página de Calendly con el ID único
+                if (typeof redirigirACalendly === 'function') {
+                    redirigirACalendly(formIdUnico);
                 }
                 console.log('Formulario enviado exitosamente:', formData);
             } else {
@@ -248,11 +272,11 @@ function initWebhookForm() {
         } catch (error) {
             console.error('Error detallado:', error);
 
-            // Si el error es de red pero los datos se enviaron, mostrar paso 2 de todos modos
+            // Si el error es de red pero los datos se enviaron, redirigir de todos modos
             if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-                console.log('Posible error de CORS, pero datos enviados. Mostrando paso 2.');
-                if (typeof mostrarPaso2 === 'function') {
-                    mostrarPaso2();
+                console.log('Posible error de CORS, pero datos enviados. Redirigiendo a Calendly.');
+                if (typeof redirigirACalendly === 'function') {
+                    redirigirACalendly(formIdUnico);
                 }
             } else {
                 submitBtn.disabled = false;

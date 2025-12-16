@@ -5,15 +5,15 @@
 const CONFIG = {
     // Hello Bar
     helloBar: {
-        mensaje: "Ecosistema exclusivo para profesionales que tratan con personas endeudadas.",
+        mensaje: "Únete ahora y gana 300€ por cada referido. Programa limitado por zonas.",
         mostrar: true,
         enlace: "#registro",
         textoBoton: "Más info"
     },
-
+    
     // Video de Vimeo
     vimeoVideoId: "VIDEO_ID",
-
+    
     // ============================================
     // HUBSPOT - CONFIGURACIÓN DEL FORMULARIO
     // ============================================
@@ -23,7 +23,7 @@ const CONFIG = {
         formGuid: "TU_FORM_GUID",         // ← CAMBIAR: Tu Form GUID
         region: "eu1"                     // eu1 para Europa, na1 para USA
     },
-
+    
     // Animaciones AOS
     aos: {
         duration: 800,
