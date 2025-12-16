@@ -177,12 +177,50 @@ function toggleFaq(button) {
 // ============================================
 function initWebhookForm() {
     const form = document.getElementById('contactForm');
-    if (!form) return;
+    if (!form) {
+        console.warn('Formulario contactForm no encontrado');
+        return;
+    }
 
     form.addEventListener('submit', async function (e) {
         e.preventDefault();
 
+        // Validar campos requeridos antes de continuar
+        const nombre = document.getElementById('nombre');
+        const email = document.getElementById('email');
+        const telefono = document.getElementById('telefono');
+        const privacidad = document.getElementById('privacidad');
+
+        if (!nombre || !nombre.value.trim()) {
+            alert('Por favor, completa tu nombre');
+            nombre.focus();
+            return;
+        }
+
+        if (!email || !email.value.trim() || !email.validity.valid) {
+            alert('Por favor, ingresa un email válido');
+            email.focus();
+            return;
+        }
+
+        if (!telefono || !telefono.value.trim()) {
+            alert('Por favor, completa tu teléfono');
+            telefono.focus();
+            return;
+        }
+
+        if (!privacidad || !privacidad.checked) {
+            alert('Debes aceptar la política de privacidad para continuar');
+            privacidad.focus();
+            return;
+        }
+
         const submitBtn = form.querySelector('button[type="submit"]');
+        if (!submitBtn) {
+            console.error('Botón de envío no encontrado');
+            return;
+        }
+
         const originalText = submitBtn.innerHTML;
 
         // Estado de carga
@@ -211,11 +249,11 @@ function initWebhookForm() {
 
         // Obtener código de país y teléfono
         const codigoPais = document.getElementById('codigo_pais')?.value || '+34';
-        const telefonoRaw = document.getElementById('telefono').value;
+        const telefonoRaw = telefono.value.trim();
         
         // Normalizar teléfono: mantener el + si existe, eliminar todo lo demás excepto números
         let telefonoCompleto;
-        if (telefonoRaw.trim().startsWith('+')) {
+        if (telefonoRaw.startsWith('+')) {
             // Si el teléfono ya tiene código de país con +, normalizar todo manteniendo el +
             telefonoCompleto = '+' + telefonoRaw.replace(/[^\d]/g, '');
         } else {
@@ -226,14 +264,14 @@ function initWebhookForm() {
 
         // Recoger datos del formulario
         const formData = {
-            nombre: document.getElementById('nombre').value,
-            email: document.getElementById('email').value,
+            nombre: nombre.value.trim(),
+            email: email.value.trim(),
             telefono: telefonoCompleto, // Número completo con código de país (ej: +34612345678)
-            provincia: document.getElementById('provincia').value,
-            tiene_contacto: document.getElementById('tiene_contacto').value,
-            autonomo_empresa: document.getElementById('autonomo_empresa').value,
-            privacidad: document.getElementById('privacidad').checked,
-            newsletter: document.getElementById('newsletter').checked,
+            provincia: document.getElementById('provincia')?.value || '',
+            tiene_contacto: document.getElementById('tiene_contacto')?.value || '',
+            autonomo_empresa: document.getElementById('autonomo_empresa')?.value || '',
+            privacidad: privacidad.checked,
+            newsletter: document.getElementById('newsletter')?.checked || false,
             tag: tag,
             form_id: formIdUnico, // ID único del formulario
             timestamp: new Date().toISOString(),
@@ -261,10 +299,19 @@ function initWebhookForm() {
             // Aceptar cualquier respuesta exitosa (200-299) o incluso sin respuesta
             if (response.ok || response.status === 0) {
                 // Éxito - Redirigir a página de Calendly con el ID único
-                if (typeof redirigirACalendly === 'function') {
-                    redirigirACalendly(formIdUnico);
-                }
                 console.log('Formulario enviado exitosamente:', formData);
+                if (typeof window.redirigirACalendly === 'function') {
+                    window.redirigirACalendly(formIdUnico);
+                } else {
+                    console.warn('Función redirigirACalendly no disponible, redirigiendo manualmente');
+                    // Redirección manual como fallback
+                    const params = new URLSearchParams();
+                    params.append('nombre', formData.nombre);
+                    params.append('email', formData.email);
+                    params.append('telefono', formData.telefono);
+                    params.append('form_id', formIdUnico);
+                    window.location.href = `agendar-cita.html?${params.toString()}`;
+                }
             } else {
                 console.error('Respuesta del servidor:', response.status, response.statusText);
                 throw new Error('Error en el envío: ' + response.status);
@@ -273,10 +320,18 @@ function initWebhookForm() {
             console.error('Error detallado:', error);
 
             // Si el error es de red pero los datos se enviaron, redirigir de todos modos
-            if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-                console.log('Posible error de CORS, pero datos enviados. Redirigiendo a Calendly.');
-                if (typeof redirigirACalendly === 'function') {
-                    redirigirACalendly(formIdUnico);
+            if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError') || error.name === 'TypeError') {
+                console.log('Posible error de CORS o red, pero datos enviados. Redirigiendo a Calendly.');
+                if (typeof window.redirigirACalendly === 'function') {
+                    window.redirigirACalendly(formIdUnico);
+                } else {
+                    // Redirección manual como fallback
+                    const params = new URLSearchParams();
+                    params.append('nombre', formData.nombre);
+                    params.append('email', formData.email);
+                    params.append('telefono', formData.telefono);
+                    params.append('form_id', formIdUnico);
+                    window.location.href = `agendar-cita.html?${params.toString()}`;
                 }
             } else {
                 submitBtn.disabled = false;
