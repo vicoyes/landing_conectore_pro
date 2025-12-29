@@ -76,90 +76,6 @@
     };
   </script>
 
-  <!-- CSS Crítico inline para Above-the-fold -->
-  <style>
-    /* Font-face con font-display: swap para evitar FOIT */
-    @font-face {
-      font-family: 'IBM Plex Sans';
-      font-style: normal;
-      font-weight: 400 700;
-      font-display: swap;
-      src: url(https://fonts.gstatic.com/s/ibmplexsans/v19/zYXgKVElMYYaJe8bpLHnCwDKhdHeFaxOedc.woff2) format('woff2');
-    }
-
-    @font-face {
-      font-family: 'Inter';
-      font-style: normal;
-      font-weight: 600 800;
-      font-display: swap;
-      src: url(https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuFuYAZ9hjp-Ek-_EeA.woff2) format('woff2');
-    }
-
-    /* Estilos críticos para el Hero (Above the fold) */
-    body {
-      font-family: 'IBM Plex Sans', system-ui, sans-serif;
-      margin: 0;
-      background: #F8F9FA;
-    }
-
-    .hero-animated-bg {
-      background: linear-gradient(135deg, #0A2463 0%, #05143A 100%);
-      min-height: 100vh;
-    }
-
-    /* Placeholder mientras cargan los iconos */
-    .material-icons {
-      font-family: 'Material Icons';
-      font-weight: normal;
-      font-style: normal;
-      font-size: 24px;
-      display: inline-block;
-      line-height: 1;
-      text-transform: none;
-      letter-spacing: normal;
-      word-wrap: normal;
-      white-space: nowrap;
-      direction: ltr;
-      -webkit-font-smoothing: antialiased;
-    }
-
-    /* Ocultar flecha nativa del select de código de país */
-    #codigo_pais {
-      -webkit-appearance: none !important;
-      -moz-appearance: none !important;
-      appearance: none !important;
-      background-image: none !important;
-      background: transparent !important;
-    }
-    
-    /* Firefox: ocultar flecha nativa */
-    #codigo_pais::-moz-focus-inner {
-      border: 0;
-    }
-    
-    /* IE/Edge: ocultar flecha nativa */
-    #codigo_pais::-ms-expand {
-      display: none;
-    }
-
-    /* Ajustar z-index para evitar que el autocompletado de Chrome tape otros campos */
-    .grid.md\:grid-cols-2 > div:first-child {
-      position: relative;
-      z-index: 1;
-    }
-    
-    .grid.md\:grid-cols-2 > div:last-child {
-      position: relative;
-      z-index: 10;
-    }
-
-    /* Cuando el campo de teléfono está en focus, asegurar que el autocompletado no tape */
-    #telefono:focus,
-    #telefono:-webkit-autofill {
-      position: relative;
-      z-index: 1;
-    }
-  </style>
 
   <!-- Estilos personalizados - Críticos -->
   <link href="src/css/styles.css" rel="stylesheet" />
@@ -1413,18 +1329,17 @@
               </div>
 
               <!-- Fila 2: Teléfono y Provincia -->
-              <div class="grid md:grid-cols-2 gap-6" style="isolation: isolate;">
-                <div class="relative" style="z-index: 1;">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6 form-grid-isolated">
+                <div class="relative w-full form-field-z-1">
                   <label for="telefono" class="block text-sm font-semibold text-gray-700 mb-2">
                     Teléfono <span class="text-red-500">*</span>
                   </label>
                   <!-- Campo unificado de teléfono con código de país -->
-                  <div class="relative flex items-center bg-gray-50 border border-gray-200 rounded-xl focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+                  <div class="relative flex items-center bg-gray-50 border border-gray-200 rounded-xl focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all w-full overflow-hidden">
                     <!-- Contenedor del selector de código de país -->
-                    <div class="relative">
+                    <div class="relative flex-shrink-0">
                       <select id="codigo_pais" name="codigo_pais" required
-                        class="appearance-none bg-transparent border-none px-4 py-3 pr-8 text-gray-700 focus:outline-none cursor-pointer focus:ring-0"
-                        style="min-width: 110px; -webkit-appearance: none; -moz-appearance: none; appearance: none; background-image: none; background: transparent;">
+                        class="appearance-none bg-transparent border-none px-2 md:px-4 py-3 pr-6 md:pr-8 text-gray-700 focus:outline-none cursor-pointer focus:ring-0 text-sm md:text-base">
                         <option value="+34" selected>🇪🇸 +34</option>
                         <option value="+1">🇺🇸 +1</option>
                         <option value="+44">🇬🇧 +44</option>
@@ -1456,26 +1371,26 @@
                         <option value="+51">🇵🇪 +51</option>
                       </select>
                       <!-- Icono de flecha para el select (personalizado) -->
-                      <div class="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
-                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <div class="absolute right-1 md:right-2 top-1/2 -translate-y-1/2 pointer-events-none">
+                        <svg class="w-3 h-3 md:w-4 md:h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                         </svg>
                       </div>
                     </div>
                     <!-- Separador vertical -->
-                    <div class="h-6 w-px bg-gray-300"></div>
+                    <div class="h-6 w-px bg-gray-300 flex-shrink-0"></div>
                     <!-- Campo de número de teléfono -->
                     <input type="tel" id="telefono" name="telefono" required
-                      class="flex-1 bg-transparent border-none px-4 py-3 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-0"
+                      class="flex-1 min-w-0 bg-transparent border-none px-2 md:px-4 py-3 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-0 text-sm md:text-base w-full"
                       placeholder="612 345 678">
                   </div>
                 </div>
-                <div class="relative" style="z-index: 2;">
+                <div class="relative w-full form-field-z-2">
                   <label for="provincia" class="block text-sm font-semibold text-gray-700 mb-2">
                     Provincia
                   </label>
                   <select id="provincia" name="provincia"
-                    class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-700 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all appearance-none cursor-pointer">
+                    class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-700 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all appearance-none cursor-pointer text-sm md:text-base">
                     <option value="">Selecciona tu provincia</option>
                     <option value="alava">Álava</option>
                     <option value="albacete">Albacete</option>
@@ -1588,7 +1503,7 @@
               <!-- Botón de envío -->
               <div class="pt-4">
                 <button type="submit"
-                  class="w-full bg-primary text-white font-bold text-lg py-4 px-8 rounded-xl shadow-lg hover:bg-primary/90 hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2">
+                  class="w-full bg-primary text-white font-bold text-base sm:text-lg py-4 px-8 rounded-xl shadow-lg hover:bg-primary/90 hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2">
                   <span>CONTINUAR AL PASO 2</span>
                   <span class="material-icons">arrow_forward</span>
                 </button>
