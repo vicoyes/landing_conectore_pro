@@ -173,6 +173,195 @@ function toggleFaq(button) {
 }
 
 // ============================================
+// GENERACIÓN DE CÓDIGOS ÚNICOS
+// ============================================
+/**
+ * Genera un código alfanumérico único
+ * @param {string} prefix - Prefijo del código (ej: "CON-", "REF-")
+ * @param {number} length - Longitud del código (sin contar el prefijo)
+ * @returns {string} Código único generado
+ */
+function generarCodigoUnico(prefix, length = 6) {
+    // Caracteres permitidos (sin I, O, 0, 1 para evitar confusión)
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let codigo = prefix;
+    
+    // Generar caracteres aleatorios
+    for (let i = 0; i < length; i++) {
+        const randomIndex = Math.floor(Math.random() * chars.length);
+        codigo += chars[randomIndex];
+    }
+    
+    // Agregar timestamp para mayor unicidad (últimos 4 dígitos)
+    const timestamp = Date.now().toString().slice(-4);
+    codigo += timestamp;
+    
+    return codigo;
+}
+
+/**
+ * Genera user_code único (CON-XXXXXX)
+ * @returns {string} Código de usuario único
+ */
+function generarUserCode() {
+    return generarCodigoUnico('CON-', 6);
+}
+
+/**
+ * Genera referral_code único (REF-XXXXXX)
+ * @returns {string} Código de referido único
+ */
+function generarReferralCode() {
+    return generarCodigoUnico('REF-', 6);
+}
+
+// ============================================
+// VALIDACIÓN DE EMAIL EXISTENTE
+// ============================================
+async function verificarEmailExistente(email) {
+    // Validar que el email no esté vacío
+    if (!email || !email.trim() || !email.includes('@')) {
+        console.log('Email no válido para verificación:', email);
+        throw new Error('Email no válido');
+    }
+    
+    // Verificar que el webhook esté configurado
+    if (!CONFIG.n8n || !CONFIG.n8n.webhookForm) {
+        console.error('Webhook de n8n no configurado');
+        throw new Error('Webhook de n8n no configurado. Configura CONFIG.n8n.webhookForm en config.js');
+    }
+    
+    try {
+        console.log('Verificando email vía n8n (mismo webhook):', email);
+        console.log('Webhook URL:', CONFIG.n8n.webhookForm);
+        
+        // Enviar email a n8n para verificación usando el mismo webhook
+        // Agregamos action: "verify_email" para que n8n sepa que es solo verificación
+        const response = await fetch(CONFIG.n8n.webhookForm, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                action: 'verify_email',  // Indicador para n8n de que es verificación
+                email: email.toLowerCase().trim()
+            })
+        });
+        
+        console.log('Respuesta de n8n - Status:', response.status);
+        
+        if (!response.ok) {
+            // Intentar leer el cuerpo de la respuesta para más detalles
+            let errorDetails = '';
+            try {
+                const errorText = await response.text();
+                errorDetails = errorText;
+                console.error('Detalles del error 500:', errorText);
+            } catch (e) {
+                console.error('No se pudo leer el cuerpo del error');
+            }
+            throw new Error(`Error en la respuesta de n8n: ${response.status} ${response.statusText}. ${errorDetails ? 'Detalles: ' + errorDetails : ''}`);
+        }
+        
+        // Leer la respuesta
+        let responseData;
+        try {
+            const responseText = await response.text();
+            console.log('Respuesta raw de n8n:', responseText);
+            responseData = JSON.parse(responseText);
+        } catch (parseError) {
+            console.error('Error al parsear respuesta JSON:', parseError);
+            throw new Error('Respuesta de n8n no es JSON válido');
+        }
+        
+        console.log('Respuesta completa de n8n:', responseData);
+        
+        // La respuesta viene en formato: [{"sucess": {"state": false, "reason": "EMAIL_EXISTS", "message": "..."}}]
+        // n8n puede devolver un array o un objeto directamente
+        let result;
+        if (Array.isArray(responseData) && responseData.length > 0) {
+            result = responseData[0];
+        } else if (responseData.sucess) {
+            result = responseData;
+        } else {
+            // Si viene directamente el objeto sucess
+            result = { sucess: responseData };
+        }
+        
+        console.log('Resultado procesado:', result);
+        
+        // Verificar la estructura de la respuesta
+        if (!result.sucess) {
+            console.error('Respuesta de n8n no tiene el formato esperado:', result);
+            throw new Error('Formato de respuesta de n8n inválido');
+        }
+        
+        const successData = result.sucess;
+        console.log('Datos de verificación:', successData);
+        
+        // Si state es false y reason es "EMAIL_EXISTS", el email existe
+        if (successData.state === false && successData.reason === 'EMAIL_EXISTS') {
+            console.log('=== RESULTADO DE VERIFICACIÓN ===');
+            console.log('Email buscado:', email);
+            console.log('✅ EMAIL EXISTE - El usuario ya está registrado');
+            console.log('Mensaje:', successData.message);
+            console.log('================================');
+            return true; // Email existe
+        }
+        
+        // Si state es true o reason es diferente, el email no existe
+        console.log('=== RESULTADO DE VERIFICACIÓN ===');
+        console.log('Email buscado:', email);
+        console.log('✅ EMAIL NO EXISTE - El usuario puede continuar');
+        console.log('Estado:', successData.state);
+        console.log('Razón:', successData.reason);
+        console.log('================================');
+        return false; // Email no existe
+        
+    } catch (error) {
+        console.error('Error al verificar email vía n8n:', error);
+        console.error('Tipo de error:', error.name);
+        console.error('Mensaje:', error.message);
+        throw error; // Re-lanzar el error para que se maneje arriba
+    }
+}
+
+// Función para mostrar mensaje de error de email
+function mostrarErrorEmail(emailInput, mensaje) {
+    // Remover mensaje anterior si existe
+    const errorMsgAnterior = document.getElementById('email-error-msg');
+    if (errorMsgAnterior) {
+        errorMsgAnterior.remove();
+    }
+    
+    // Crear mensaje de error
+    const errorMsg = document.createElement('div');
+    errorMsg.id = 'email-error-msg';
+    errorMsg.className = 'mt-2 text-red-600 text-sm flex items-center gap-2 animate-fade-in';
+    errorMsg.innerHTML = `<span class="material-icons text-base">error</span> <span>${mensaje}</span>`;
+    
+    // Insertar después del campo de email
+    const emailContainer = emailInput.closest('div') || emailInput.parentElement;
+    emailContainer.appendChild(errorMsg);
+    
+    // Resaltar el campo de email
+    emailInput.classList.add('border-red-500', 'focus:border-red-500', 'focus:ring-red-500');
+    
+    // Scroll suave al campo con error
+    emailInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    emailInput.focus();
+}
+
+// Función para remover error de email
+function removerErrorEmail(emailInput) {
+    const errorMsg = document.getElementById('email-error-msg');
+    if (errorMsg) {
+        errorMsg.remove();
+    }
+    emailInput.classList.remove('border-red-500', 'focus:border-red-500', 'focus:ring-red-500');
+}
+
+// ============================================
 // WEBHOOK FORM SUBMISSION (n8n)
 // ============================================
 function initWebhookForm() {
@@ -184,48 +373,119 @@ function initWebhookForm() {
 
     form.addEventListener('submit', async function (e) {
         e.preventDefault();
+        
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        const emailInput = document.getElementById('email');
+        const email = emailInput ? emailInput.value.trim() : '';
 
-        // Validar campos requeridos antes de continuar
+        // ============================================
+        // VALIDACIÓN DE EMAIL (OBLIGATORIA)
+        // ============================================
+        console.log('========================================');
+        console.log('INICIANDO VALIDACIÓN DE FORMULARIO');
+        console.log('========================================');
+        console.log('Email a verificar:', email);
+        
+        // Estado de carga - Verificando email
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="material-icons animate-spin">sync</span> Verificando email...';
+        
+        // Validar si el email ya existe antes de enviar (validación OBLIGATORIA)
+        console.log('Llamando a verificarEmailExistente...');
+        
+        let emailExiste;
+        try {
+            emailExiste = await verificarEmailExistente(email);
+            console.log('Resultado de verificarEmailExistente:', emailExiste);
+        } catch (error) {
+            console.error('Error durante la verificación de email:', error);
+            // Si hay error en la verificación, NO continuar por seguridad
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+            alert('Error al verificar el email. Por favor, inténtalo de nuevo o contacta con soporte.');
+            return; // NO continuar si hay error
+        }
+        
+        // Verificar que emailExiste sea un booleano válido
+        if (typeof emailExiste !== 'boolean') {
+            console.error('Resultado de verificación no es booleano:', emailExiste);
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+            alert('Error en la verificación. Por favor, inténtalo de nuevo.');
+            return; // NO continuar si el resultado no es válido
+        }
+        
+        if (emailExiste === true) {
+            // El email EXISTE en la base de datos - mostrar error y detener
+            console.log('❌ EMAIL YA EXISTE - Deteniendo envío del formulario');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+            
+            // Mostrar mensaje de error al usuario
+            if (emailInput) {
+                mostrarErrorEmail(emailInput, 'Este email ya está registrado como conector. Por favor, usa otro email o contacta con soporte si ya tienes cuenta.');
+            } else {
+                alert('Este email ya está registrado como conector. Por favor, usa otro email.');
+            }
+            
+            return; // NO continuar con el envío - BLOQUEAR completamente
+        }
+        
+        // Si el email NO existe (emailExiste === false), remover cualquier error previo y continuar con el envío
+        console.log('✅ EMAIL NO EXISTE - Continuando con envío del formulario');
+        if (emailInput) {
+            removerErrorEmail(emailInput);
+        }
+        submitBtn.innerHTML = '<span class="material-icons animate-spin">sync</span> Enviando...';
+
+        // ============================================
+        // VALIDAR CAMPOS REQUERIDOS
+        // ============================================
         const nombre = document.getElementById('nombre');
-        const email = document.getElementById('email');
         const telefono = document.getElementById('telefono');
         const privacidad = document.getElementById('privacidad');
 
         if (!nombre || !nombre.value.trim()) {
             alert('Por favor, completa tu nombre');
             nombre.focus();
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
             return;
         }
 
-        if (!email || !email.value.trim() || !email.validity.valid) {
+        if (!email || !email.trim() || !emailInput.validity.valid) {
             alert('Por favor, ingresa un email válido');
-            email.focus();
+            emailInput.focus();
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
             return;
         }
 
         if (!telefono || !telefono.value.trim()) {
             alert('Por favor, completa tu teléfono');
             telefono.focus();
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
             return;
         }
 
         if (!privacidad || !privacidad.checked) {
             alert('Debes aceptar la política de privacidad para continuar');
             privacidad.focus();
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
             return;
         }
 
-        const submitBtn = form.querySelector('button[type="submit"]');
         if (!submitBtn) {
             console.error('Botón de envío no encontrado');
             return;
         }
 
-        const originalText = submitBtn.innerHTML;
-
-        // Estado de carga
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span class="material-icons animate-spin">sync</span> Enviando...';
+        // ============================================
+        // CONTINUAR CON EL RESTO DE LA LÓGICA EXISTENTE
+        // ============================================
 
         // Obtener parámetro tag de la URL
         const urlParams = new URLSearchParams(window.location.search);
@@ -262,10 +522,18 @@ function initWebhookForm() {
             telefonoCompleto = codigoPais + telefonoNormalizado;
         }
 
+        // Generar códigos únicos para el conector
+        const userCode = generarUserCode();
+        const referralCode = generarReferralCode();
+        console.log('Códigos generados:');
+        console.log('- User Code:', userCode);
+        console.log('- Referral Code:', referralCode);
+        console.log('- Form ID:', formIdUnico);
+
         // Recoger datos del formulario
         const formData = {
             nombre: nombre.value.trim(),
-            email: email.value.trim(),
+            email: email, // email ya es un string (valor del input), no necesita .value.trim()
             telefono: telefonoCompleto, // Número completo con código de país (ej: +34612345678)
             provincia: document.getElementById('provincia')?.value || '',
             tiene_contacto: document.getElementById('tiene_contacto')?.value || '',
@@ -273,7 +541,10 @@ function initWebhookForm() {
             privacidad: privacidad.checked,
             newsletter: document.getElementById('newsletter')?.checked || false,
             tag: tag,
+            perfil: 'Conector Pro', // Perfil fijo para este landing page
             form_id: formIdUnico, // ID único del formulario
+            user_code: userCode, // Código único del usuario (para Supabase y HubSpot)
+            referral_code: referralCode, // Código único de referido (para Supabase y HubSpot)
             timestamp: new Date().toISOString(),
             page_url: window.location.href,
             page_title: document.title,
@@ -286,7 +557,7 @@ function initWebhookForm() {
             console.log('Enviando datos a n8n (Test Mode)...', formData);
 
             const response = await fetch(
-                'https://n8n.empiezadecero.cat/webhook/75123388-942d-4d53-be3a-b34a445d6d73',
+                CONFIG.n8n.webhookForm,
                 {
                     method: 'POST',
                     headers: {

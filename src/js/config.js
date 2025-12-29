@@ -31,6 +31,13 @@ const CONFIG = {
         once: true,
         offset: 50,
         delay: 0
+    },
+    
+    // ============================================
+    // N8N - CONFIGURACIÓN DEL WEBHOOK
+    // ============================================
+    n8n: {
+        webhookForm: 'https://n8n.empiezadecero.cat/webhook/75123388-942d-4d53-be3a-b34a445d6d73'
     }
 };
 
