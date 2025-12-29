@@ -14,13 +14,7 @@
     src: url(https://fonts.gstatic.com/s/ibmplexsans/v19/zYXgKVElMYYaJe8bpLHnCwDKhdHeFaxOedc.woff2) format('woff2');
 }
 
-@font-face {
-    font-family: 'Inter';
-    font-style: normal;
-    font-weight: 600 800;
-    font-display: swap;
-    src: url(https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuFuYAZ9hjp-Ek-_EeA.woff2) format('woff2');
-}
+/* Inter se carga desde Google Fonts API - ver link en HTML */
 
 /* Estilos críticos para el Hero (Above the fold) */
 body {
